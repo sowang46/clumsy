@@ -36,7 +36,7 @@ static INLINE_FUNCTION short isBufEmpty() {
 
 static Ihandle *throttleSetupUI() {
     Ihandle *throttleControlsBox = IupHbox(
-        dropThrottledCheckbox = IupToggle("Drop Throttled", NULL),
+        dropThrottledCheckbox = IupToggle("Overflow flush", NULL),
         IupLabel("Cycle(ms):"),
         cycleInput = IupText(NULL),
         IupLabel("On-time(ms):"),
@@ -76,7 +76,7 @@ static Ihandle *throttleSetupUI() {
     IupSetAttribute(onTimeInput, INTEGER_MIN, ONTIME_MIN);
 
     // enable by default to avoid confusing
-    IupSetAttribute(inboundCheckbox, "VALUE", "ON");
+    // IupSetAttribute(inboundCheckbox, "VALUE", "ON");
     IupSetAttribute(outboundCheckbox, "VALUE", "ON");
     IupSetAttribute(dropThrottledCheckbox, "VALUE", "ON");
 
@@ -137,17 +137,6 @@ static void throttleCloseDown(PacketNode *head, PacketNode *tail) {
 }
 
 static short throttleProcess(PacketNode *head, PacketNode *tail) {
-    // // Traffic shaping:
-    // Add packet to buffer;
-    // If (current_time is in on_duration) {
-    //     while (buffer is not empty && current_time is in on_duration) {
-    //         send packet;
-    //     }
-    // }
-    // If (buffer size > KEEP_MOST) {
-    //     clear buffer;
-    // }
-
     // Pick up all packets
     PacketNode *pac = tail->prev;
     while (bufSize < KEEP_AT_MOST && pac != head) {
@@ -180,7 +169,7 @@ static short throttleProcess(PacketNode *head, PacketNode *tail) {
 }
 
 Module throttleModule = {
-    "Throttle",
+    "On/Off shaping",
     NAME,
     (short*)&throttleEnabled,
     throttleSetupUI,
