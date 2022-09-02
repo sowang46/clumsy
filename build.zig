@@ -14,7 +14,7 @@ pub fn build(b: *std.build.Builder) void {
     const arch = b.option(ClumsyArch, "arch", "x86, x64") orelse .x64;
     const conf = b.option(ClumsyConf, "conf", "Debug, Release") orelse .Debug;
     const windivert_sign = b.option(ClumsyWinDivertSign, "sign", "A, B, C") orelse .A;
-    const windows_kit_bin_root = b.option([]const u8, "windows_kit_bin_root", "Windows SDK Bin root") orelse "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0";
+    const windows_kit_bin_root = b.option([]const u8, "windows_kit_bin_root", "Windows SDK Bin root") orelse "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0";
 
     const arch_tag = @tagName(arch);
     const conf_tag = @tagName(conf);
