@@ -116,7 +116,7 @@ static void clearBufPackets(PacketNode *tail) {
 // See if it is currently in an on duration
 static short isAtOnDuration() {
     DWORD currentTime = timeGetTime();
-    return currentTime%cycleFrame<onTime ? 1 : 0;
+    return currentTime % (unsigned int)cycleFrame < (unsigned int)onTime ? 1 : 0;
 }
 
 static void dropBufPackets() {
