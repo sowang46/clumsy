@@ -5,6 +5,7 @@ __A clumsy-based Windows traffic shaper__
 Repurosed the "throttled" function in clumsy into a on-off shaping tool.
 
 ![User interface](clumsy-reg.PNG)
+![Example traffic trace](clumsy-reg-traffic.png)
 
 ## Usage
 
