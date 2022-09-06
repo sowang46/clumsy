@@ -1,6 +1,7 @@
 bin/
 build/
 tmp/
+zig-out/
 zig-cache/
 etc/clumsy.aps
 *.swp

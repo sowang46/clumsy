@@ -8,19 +8,24 @@
 #define ONTIME_MIN "0"
 #define ONTIME_MAX "2000"
 #define ONTIME_DEFAULT 20
+#define PACKETRATE_MIN "5"
+#define PACKETRATE_MAX "500"
+#define PACKETRATE_DEFAULT 150
 // threshold for how many packet to throttle at most
 // #define KEEP_AT_MOST 1000
-#define KEEP_AT_MOST 1000000
+#define KEEP_AT_MOST 10000
 
-static Ihandle *inboundCheckbox, *outboundCheckbox, *chanceInput, *cycleInput, *onTimeInput, *dropThrottledCheckbox;
+static Ihandle *cycleInput, *onTimeInput, *packetRateInput, *dropThrottledCheckbox;
 
 static volatile short throttleEnabled = 0,
-    throttleInbound = 1, throttleOutbound = 1,
+    throttleInbound = 0, throttleOutbound = 1,
     chance = 10000, // [0-10000]
     // time frame in ms, when a throttle start the packets within the time 
     // will be queued and sent altogether when time is over
     cycleFrame = CYCLE_DEFAULT,
     onTime = ONTIME_DEFAULT,
+    // Estimated number of packets per 1ms
+    packetRate = PACKETRATE_DEFAULT,
     dropThrottled = 0; 
 
 static PacketNode throttleHeadNode = {0}, throttleTailNode = {0};
@@ -36,13 +41,15 @@ static INLINE_FUNCTION short isBufEmpty() {
 
 static Ihandle *throttleSetupUI() {
     Ihandle *throttleControlsBox = IupHbox(
-        dropThrottledCheckbox = IupToggle("Overflow flush", NULL),
+        // dropThrottledCheckbox = IupToggle("Overflow flush", NULL),
         IupLabel("Cycle(ms):"),
         cycleInput = IupText(NULL),
-        IupLabel("On-time(ms):"),
-        onTimeInput = IupText(NULL),
-        inboundCheckbox = IupToggle("Inbound", NULL),
-        outboundCheckbox = IupToggle("Outbound", NULL),
+        // IupLabel("On-time(ms):"),
+        // onTimeInput = IupText(NULL),
+        // IupLabel("# Packets/ms:"),
+        // packetRateInput = IupText(NULL),
+        // inboundCheckbox = IupToggle("Inbound", NULL),
+        // outboundCheckbox = IupToggle("Outbound", NULL),
         // IupLabel("Chance(%):"),
         // chanceInput = IupText(NULL),
         NULL
@@ -52,12 +59,12 @@ static Ihandle *throttleSetupUI() {
     // IupSetAttribute(chanceInput, "VALUE", "100.0");
     // IupSetCallback(chanceInput, "VALUECHANGED_CB", uiSyncChance);
     // IupSetAttribute(chanceInput, SYNCED_VALUE, (char*)&chance);
-    IupSetCallback(inboundCheckbox, "ACTION", (Icallback)uiSyncToggle);
-    IupSetAttribute(inboundCheckbox, SYNCED_VALUE, (char*)&throttleInbound);
-    IupSetCallback(outboundCheckbox, "ACTION", (Icallback)uiSyncToggle);
-    IupSetAttribute(outboundCheckbox, SYNCED_VALUE, (char*)&throttleOutbound);
-    IupSetCallback(dropThrottledCheckbox, "ACTION", (Icallback)uiSyncToggle);
-    IupSetAttribute(dropThrottledCheckbox, SYNCED_VALUE, (char*)&dropThrottled);
+    // IupSetCallback(inboundCheckbox, "ACTION", (Icallback)uiSyncToggle);
+    // IupSetAttribute(inboundCheckbox, SYNCED_VALUE, (char*)&throttleInbound);
+    // IupSetCallback(outboundCheckbox, "ACTION", (Icallback)uiSyncToggle);
+    // IupSetAttribute(outboundCheckbox, SYNCED_VALUE, (char*)&throttleOutbound);
+    // IupSetCallback(dropThrottledCheckbox, "ACTION", (Icallback)uiSyncToggle);
+    // IupSetAttribute(dropThrottledCheckbox, SYNCED_VALUE, (char*)&dropThrottled);
 
     // sync cycle time
     IupSetAttribute(cycleInput, "VISIBLECOLUMNS", "3");
@@ -68,24 +75,33 @@ static Ihandle *throttleSetupUI() {
     IupSetAttribute(cycleInput, INTEGER_MIN, CYCLE_MIN);
 
     // sync on-time duration
-    IupSetAttribute(onTimeInput, "VISIBLECOLUMNS", "3");
-    IupSetAttribute(onTimeInput, "VALUE", STR(ONTIME_DEFAULT));
-    IupSetCallback(onTimeInput, "VALUECHANGED_CB", (Icallback)uiSyncInteger);
-    IupSetAttribute(onTimeInput, SYNCED_VALUE, (char*)&onTime);
-    IupSetAttribute(onTimeInput, INTEGER_MAX, ONTIME_MAX);
-    IupSetAttribute(onTimeInput, INTEGER_MIN, ONTIME_MIN);
+    // IupSetAttribute(onTimeInput, "VISIBLECOLUMNS", "3");
+    // IupSetAttribute(onTimeInput, "VALUE", STR(ONTIME_DEFAULT));
+    // IupSetCallback(onTimeInput, "VALUECHANGED_CB", (Icallback)uiSyncInteger);
+    // IupSetAttribute(onTimeInput, SYNCED_VALUE, (char*)&onTime);
+    // IupSetAttribute(onTimeInput, INTEGER_MAX, ONTIME_MAX);
+    // IupSetAttribute(onTimeInput, INTEGER_MIN, ONTIME_MIN);
+
+    // sync packet rate
+    // IupSetAttribute(packetRateInput, "VISIBLECOLUMNS", "3");
+    // IupSetAttribute(packetRateInput, "VALUE", STR(PACKETRATE_DEFAULT));
+    // IupSetCallback(packetRateInput, "VALUECHANGED_CB", (Icallback)uiSyncInteger);
+    // IupSetAttribute(packetRateInput, SYNCED_VALUE, (char*)&packetRate);
+    // IupSetAttribute(packetRateInput, INTEGER_MAX, PACKETRATE_MAX);
+    // IupSetAttribute(packetRateInput, INTEGER_MIN, PACKETRATE_MIN);
 
     // enable by default to avoid confusing
     // IupSetAttribute(inboundCheckbox, "VALUE", "ON");
-    IupSetAttribute(outboundCheckbox, "VALUE", "ON");
-    IupSetAttribute(dropThrottledCheckbox, "VALUE", "ON");
+    // IupSetAttribute(outboundCheckbox, "VALUE", "ON");
+    // IupSetAttribute(dropThrottledCheckbox, "VALUE", "ON");
 
     if (parameterized) {
-        setFromParameter(inboundCheckbox, "VALUE", NAME"-inbound");
-        setFromParameter(outboundCheckbox, "VALUE", NAME"-outbound");
+        // setFromParameter(inboundCheckbox, "VALUE", NAME"-inbound");
+        // setFromParameter(outboundCheckbox, "VALUE", NAME"-outbound");
         // setFromParameter(chanceInput, "VALUE", NAME"-chance");
         setFromParameter(cycleInput, "VALUE", NAME"-cycle");
-        setFromParameter(onTimeInput, "VALUE", NAME"-ontime");
+        // setFromParameter(onTimeInput, "VALUE", NAME"-ontime");
+        // setFromParameter(packetRateInput, "VALUE", NAME"-rate");
     }
 
     return throttleControlsBox;
@@ -99,35 +115,19 @@ static void throttleStartUp() {
     } else {
         assert(isBufEmpty());
     }
-    // throttleStartTick = 0;
+    throttleStartTick = timeGetTime();
     startTimePeriod();
 }
 
 static void clearBufPackets(PacketNode *tail) {
     PacketNode *oldLast = tail->prev;
+    throttleStartTick = timeGetTime();
     LOG("Throttled end, send all %d packets. Buffer at max: %s", bufSize, bufSize == KEEP_AT_MOST ? "YES" : "NO");
     while (!isBufEmpty()) {
         insertAfter(popNode(bufTail->prev), oldLast);
         --bufSize;
     }
-    throttleStartTick = 0;
 }
-
-// See if it is currently in an on duration
-static short isAtOnDuration() {
-    DWORD currentTime = timeGetTime();
-    return currentTime % (unsigned int)cycleFrame < (unsigned int)onTime ? 1 : 0;
-}
-
-static void dropBufPackets() {
-    LOG("Throttled end, drop all %d packets. Buffer at max: %s", bufSize, bufSize == KEEP_AT_MOST ? "YES" : "NO");
-    while (!isBufEmpty()) {
-        freeNode(popNode(bufTail->prev));
-        --bufSize;
-    }
-    throttleStartTick = 0;
-}
-
 
 static void throttleCloseDown(PacketNode *head, PacketNode *tail) {
     UNREFERENCED_PARAMETER(tail);
@@ -137,8 +137,8 @@ static void throttleCloseDown(PacketNode *head, PacketNode *tail) {
 }
 
 static short throttleProcess(PacketNode *head, PacketNode *tail) {
-    // Pick up all packets
     PacketNode *pac = tail->prev;
+    DWORD currentTick = timeGetTime();
     while (bufSize < KEEP_AT_MOST && pac != head) {
         if (checkDirection(pac->addr.Outbound, throttleInbound, throttleOutbound)) {
             insertAfter(popNode(pac), bufHead);
@@ -149,23 +149,12 @@ static short throttleProcess(PacketNode *head, PacketNode *tail) {
         }
     }
 
-    // Send packet at on duration
-    PacketNode *oldLast = tail->prev;
-    while (!isBufEmpty() && isAtOnDuration()) {
-        insertAfter(popNode(bufTail->prev), oldLast);
-        --bufSize;
+    // send all when throttled enough, including in current step
+    if (bufSize >= KEEP_AT_MOST || (currentTick - throttleStartTick > (unsigned int)cycleFrame)) {
+        clearBufPackets(tail);
     }
 
-    // Send all packets if buffer is full
-    if (bufSize >= KEEP_AT_MOST) {
-        if (dropThrottled) {
-            dropBufPackets();
-        } else {
-            clearBufPackets(tail);
-        }
-    }
-
-    return bufSize > 0;
+    return 1;
 }
 
 Module throttleModule = {
