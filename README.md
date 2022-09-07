@@ -9,9 +9,10 @@ Repurosed the "throttled" function in clumsy into a on-off shaping tool.
 
 ## Usage
 
-Enable "on-off shaping" and set cycle to corresponding long DRX cycle.
+Run clumsy.exe in ``bin`` folder,  enable "on-off shaping", and set cycle to corresponding long DRX cycle.
  - Due to the limistation of WinDivert, this tool cannot control the duration of on-time. The throttled buffer is flushed at the end of each cycle.
  - Please do not enable other functionalities which will disturbe traffic shaper's timing.
+ - Tested cycle range: 20ms-1000ms. Large number of packets (>50 packets/ms) may introduce processing latency that offsets the cycle timing.
 
 ## Build
 
